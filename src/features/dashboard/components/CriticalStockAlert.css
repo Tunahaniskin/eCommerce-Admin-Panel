@@ -1,0 +1,143 @@
+.critical-stock-alert {
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  border-left: 4px solid var(--danger);
+}
+
+.critical-stock-alert.safe {
+  border-left-color: var(--success);
+}
+
+.critical-stock-alert.danger {
+  background: linear-gradient(135deg, rgba(238, 93, 80, 0.05), rgba(255, 255, 255, 0.5));
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.alert-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+}
+
+.alert-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.alert-badge {
+  background: var(--danger);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.alert-description {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.stock-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stock-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s ease;
+}
+
+.stock-item:hover {
+  border-color: rgba(238, 93, 80, 0.3);
+}
+
+.stock-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-item-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.stock-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.stock-badge.danger {
+  background: rgba(238, 93, 80, 0.1);
+  color: var(--danger);
+}
+
+.stock-badge.severe {
+  background: rgba(255, 153, 0, 0.1);
+  color: #ff9900;
+}
+
+.stock-badge.warning {
+  background: rgba(255, 206, 32, 0.1);
+  color: #d4a711;
+}
+
+.stock-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stock-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.stock-count.zero {
+  color: var(--danger);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+.btn-outline:hover {
+  background: var(--bg-main);
+  border-color: var(--text-muted);
+}

@@ -1,0 +1,128 @@
+
+.chip.paid {
+  background: rgba(5, 205, 153, 0.1);
+  color: var(--success);
+  border-color: rgba(5, 205, 153, 0.2);
+}
+
+.chip.pending {
+  background: rgba(255, 206, 32, 0.1);
+  color: var(--warning);
+  border-color: rgba(255, 206, 32, 0.2);
+}
+
+.chip.cancelled {
+  background: rgba(238, 93, 80, 0.1);
+  color: var(--danger);
+  border-color: rgba(238, 93, 80, 0.2);
+}
+
+.chip.refunded {
+  background: rgba(163, 174, 209, 0.2);
+  color: #5a6a96;
+  border-color: rgba(163, 174, 209, 0.3);
+}
+
+.hover-row {
+  transition: background-color 0.2s ease;
+}
+.hover-row:hover {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* İncele Butonu */
+.btn-inspect {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(67, 97, 238, 0.25);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.btn-inspect:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25);
+}
+
+.btn-inspect:active {
+  transform: translateY(0);
+}
+
+/* İade Et Küçük Buton */
+.btn-refund-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 206, 32, 0.15);
+  color: #a87900;
+  border: 1px solid rgba(255, 206, 32, 0.4);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.btn-refund-sm:hover {
+  background: var(--warning);
+  color: #2b3674;
+  border-color: var(--warning);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 206, 32, 0.25);
+}
+
+.btn-refund-sm:active {
+  transform: translateY(0);
+}
+
+/* Modal Header & Kapatma (Çarpı) Butonu */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.order-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1;
+}
+
+.order-modal-close:hover {
+  background: rgba(238, 93, 80, 0.12);
+  color: var(--danger);
+  border-color: rgba(238, 93, 80, 0.3);
+  transform: rotate(90deg) scale(1.08);
+}
+
+.order-modal-close:active {
+  transform: rotate(90deg) scale(0.96);
+}
+

@@ -1,0 +1,149 @@
+.recent-orders-card {
+  padding: 24px;
+  border-radius: var(--radius-lg);
+}
+
+.recent-orders-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.recent-orders-card .card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.btn-view-all {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.btn-view-all:hover {
+  text-decoration: underline;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.recent-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.recent-orders-table th {
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.recent-orders-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.recent-orders-table tr:last-child td {
+  border-bottom: none;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+  background-color: rgba(67, 97, 238, 0.02);
+}
+
+.font-mono {
+  font-family: monospace;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.customer-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar.sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary);
+  color: white;
+  border-radius: 50%;
+}
+
+.customer-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-name {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.875rem;
+}
+
+.customer-email {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.time-ago {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.amount {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: rgba(5, 205, 153, 0.1);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: rgba(255, 206, 32, 0.1);
+  color: #d4a711;
+}
+
+.badge-danger {
+  background: rgba(238, 93, 80, 0.1);
+  color: var(--danger);
+}
+
+.badge-default {
+  background: var(--bg-main);
+  color: var(--text-muted);
+}
