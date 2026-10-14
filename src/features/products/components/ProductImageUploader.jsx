@@ -123,7 +123,11 @@ const ProductImageUploader = ({ productId, initialImages = [], onImagesChanged }
 
       {images.length > 0 && (
         <div className="image-gallery">
-          {images.map(img => (
+          {[...images].sort((a, b) => {
+            if (a.isMain && !b.isMain) return -1;
+            if (!a.isMain && b.isMain) return 1;
+            return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+          }).map(img => (
             <div key={img.id} className={`image-card ${img.isMain ? 'is-main' : ''}`}>
               <img src={`${API_BASE_URL}${img.thumbnailPath || img.imagePath || ''}`} alt="Product" className="gallery-img" />
               

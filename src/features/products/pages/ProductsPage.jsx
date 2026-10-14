@@ -17,6 +17,7 @@ const ProductsPage = () => {
   const [loading, setLoading] = useState(false);
   const [searchId, setSearchId] = useState('');
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [formData, setFormData] = useState({ name: '', price: 0, stock: 0, status: 'In Stock', categoryId: '' });
   const [createFiles, setCreateFiles] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -49,6 +50,17 @@ const ProductsPage = () => {
     }
   }, [activeView, filters, page, pageSize]);
 
+  // ESC tuşuna basıldığında açık modalı kapat
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && modalView) {
+        closeModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [modalView]);
+
   const fetchCategories = async () => {
     try {
       const data = await categoriesApi.getCategories();
@@ -63,6 +75,7 @@ const ProductsPage = () => {
     setActiveView('menu');
     setSearchId('');
     setCurrentProduct(null);
+    setSelectedImageIndex(0);
     setSelectedIds([]);
     setFormData({ name: '', price: 0, stock: 0, status: 'In Stock', categoryId: '' });
     setCreateFiles([]);
@@ -73,6 +86,7 @@ const ProductsPage = () => {
     setModalView(null);
     setSearchId('');
     setCurrentProduct(null);
+    setSelectedImageIndex(0);
     setFormData({ name: '', price: 0, stock: 0, status: 'In Stock', categoryId: '' });
   };
 
@@ -175,6 +189,7 @@ const ProductsPage = () => {
       setLoading(true);
       const data = await productsApi.getProductById(searchId);
       setCurrentProduct(data);
+      setSelectedImageIndex(0);
       if (activeView === 'update') {
         setFormData({
           name: data.name || '',
@@ -210,10 +225,11 @@ const ProductsPage = () => {
   };
 
   // 6. Listeden Doğrudan Aksiyon Alma
-  const handleActionFromList = (product, action) => {
+  const handleActionFromList = async (product, action) => {
     const id = product.id || product.productId;
     setSearchId(id);
     setCurrentProduct(product);
+    setSelectedImageIndex(0);
     if (action === 'update') {
       setFormData({
         name: product.name || '',
@@ -224,6 +240,28 @@ const ProductsPage = () => {
       });
     }
     setModalView(action);
+
+    // Listeden gelen ürün verisinde detaylı resim listesi (images dizisi) bulunmayabilir.
+    // Detay ve güncelleme ekranlarında tüm görselleri eksiksiz gösterebilmek için ID ile çekiyoruz:
+    if (id) {
+      try {
+        const fullProduct = await productsApi.getProductById(id);
+        if (fullProduct) {
+          setCurrentProduct(fullProduct);
+          if (action === 'update') {
+            setFormData({
+              name: fullProduct.name || '',
+              price: fullProduct.price || 0,
+              stock: fullProduct.stock || 0,
+              status: fullProduct.status || 'In Stock',
+              categoryId: fullProduct.categoryId || ''
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Tam ürün detayı getirilemedi:', err);
+      }
+    }
   };
 
   // 7. Ürün Güncelleme İşlemi
@@ -451,14 +489,194 @@ const ProductsPage = () => {
     const imgUrl = currentProduct.thumbnailPath || currentProduct.images?.[0]?.thumbnailPath || currentProduct.imagePath || currentProduct.images?.[0]?.imagePath;
     if (imgUrl) {
       return (
-        <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-          <img src={`${API_BASE_URL}${imgUrl}`} alt={currentProduct.name} style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-main)' }} />
+        <div style={{ marginBottom: '20px', textAlign: 'center', background: 'var(--bg-main)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)' }}>
+          <img src={`${API_BASE_URL}${imgUrl}`} alt={currentProduct.name} style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '8px' }} />
         </div>
       );
     }
     return (
-      <div style={{ marginBottom: '20px', textAlign: 'center', padding: '40px', background: 'var(--bg-main)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
+      <div style={{ marginBottom: '20px', textAlign: 'center', padding: '40px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
         <span style={{ color: 'var(--text-muted)' }}>Görsel Yok</span>
+      </div>
+    );
+  };
+
+  const renderProductGallery = () => {
+    if (!currentProduct) return null;
+
+    // Görselleri sırala: Kapak resmi en başta, ardından DisplayOrder küçükten büyüğe
+    const sortedImages = (currentProduct.images && currentProduct.images.length > 0)
+      ? [...currentProduct.images].sort((a, b) => {
+          if (a.isMain && !b.isMain) return -1;
+          if (!a.isMain && b.isMain) return 1;
+          return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+        })
+      : [];
+
+    const activeImage = sortedImages[selectedImageIndex] || sortedImages[0];
+    const mainImgUrl = activeImage?.imagePath || activeImage?.thumbnailPath || currentProduct.imagePath || currentProduct.thumbnailPath;
+
+    if (!mainImgUrl && sortedImages.length === 0) {
+      return (
+        <div style={{ marginBottom: '20px', textAlign: 'center', padding: '40px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+          <span style={{ color: 'var(--text-muted)' }}>Görsel Yok</span>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+        {/* Büyük Önizleme Alanı */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          height: '350px',
+          background: 'var(--bg-main)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          padding: '12px'
+        }}>
+          {mainImgUrl ? (
+            <img
+              src={`${API_BASE_URL}${mainImgUrl}`}
+              alt={currentProduct.name}
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }}
+            />
+          ) : (
+            <span style={{ color: 'var(--text-muted)' }}>Görsel Yok</span>
+          )}
+
+          {/* Rozetler: Kapak & Sıra Numarası */}
+          <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px' }}>
+            {activeImage?.isMain && (
+              <span style={{
+                background: 'linear-gradient(135deg, #ffb300, #ff8f00)',
+                color: '#fff',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '6px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+              }}>
+                ⭐ Kapak
+              </span>
+            )}
+            {activeImage?.displayOrder !== undefined && (
+              <span style={{
+                background: 'rgba(15, 23, 42, 0.75)',
+                backdropFilter: 'blur(4px)',
+                color: '#fff',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                padding: '4px 10px',
+                borderRadius: '6px'
+              }}>
+                Sıra: {activeImage.displayOrder}
+              </span>
+            )}
+          </div>
+
+          {/* Görsel Sayacı (örn: 1 / 4) */}
+          {sortedImages.length > 1 && (
+            <div style={{
+              position: 'absolute',
+              bottom: '12px',
+              right: '12px',
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(4px)',
+              color: '#fff',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              padding: '4px 10px',
+              borderRadius: '6px'
+            }}>
+              {selectedImageIndex + 1} / {sortedImages.length}
+            </div>
+          )}
+        </div>
+
+        {/* Küçük Görseller (Thumbnail Galerisi) */}
+        {sortedImages.length > 1 && (
+          <div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+              <span>Tüm Görseller ({sortedImages.length})</span>
+              <span style={{ fontSize: '0.75rem' }}>Görüntülemek için tıklayın</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              overflowX: 'auto',
+              padding: '6px 2px',
+              width: '100%'
+            }}>
+              {sortedImages.map((img, idx) => {
+                const isSelected = idx === selectedImageIndex;
+                const thumbUrl = img.thumbnailPath || img.imagePath;
+                return (
+                  <button
+                    key={img.id || idx}
+                    type="button"
+                    onClick={() => setSelectedImageIndex(idx)}
+                    style={{
+                      border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border)',
+                      borderRadius: '10px',
+                      padding: '3px',
+                      background: isSelected ? 'var(--primary-light)' : 'var(--bg-main)',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      width: '64px',
+                      height: '64px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      transition: 'all 0.2s',
+                      transform: isSelected ? 'scale(1.06)' : 'none',
+                      outline: 'none',
+                      boxShadow: isSelected ? '0 4px 10px rgba(67, 97, 238, 0.25)' : 'none'
+                    }}
+                    title={`Sıra: ${img.displayOrder}${img.isMain ? ' (Kapak Görseli)' : ''}`}
+                  >
+                    <img
+                      src={`${API_BASE_URL}${thumbUrl}`}
+                      alt={`Thumb ${idx + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '6px'
+                      }}
+                    />
+                    {img.isMain && (
+                      <span style={{
+                        position: 'absolute',
+                        top: '-4px',
+                        right: '-4px',
+                        background: '#ffb300',
+                        color: '#000',
+                        fontSize: '9px',
+                        borderRadius: '50%',
+                        width: '15px',
+                        height: '15px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                      }}>
+                        ★
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -466,37 +684,62 @@ const ProductsPage = () => {
   const renderDetails = () => {
     if (!currentProduct) return null;
     return (
-      <div className="modal-overlay">
-        <div className="modal-content" style={{ maxWidth: '750px', width: '95%' }}>
-          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ margin: 0 }}>Ürün Detayı</h2>
-            <button className="btn-icon" style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }} onClick={closeModal}>✕</button>
+      <div 
+        className="modal-overlay" 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeModal();
+        }}
+      >
+        <div 
+          className="modal-content" 
+          onClick={(e) => e.stopPropagation()} 
+          style={{ maxWidth: '1050px', width: '92%', padding: '36px' }}
+        >
+          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700 }}>Ürün Detayı</h2>
+            <button className="btn-icon" style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', padding: '6px' }} onClick={closeModal} title="Kapat">✕</button>
           </div>
           <div className="modal-split-layout">
-            <div style={{ alignSelf: 'start' }}>
-              {renderProductImage()}
+            <div style={{ alignSelf: 'start', width: '100%' }}>
+              {renderProductGallery()}
             </div>
-            <div className="details-card">
-              <div className="details-row">
-                <span className="details-label">ID</span>
-                <span className="details-value">#{currentProduct.id || currentProduct.productId}</span>
+            <div className="details-card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div className="details-row" style={{ padding: '14px 0' }}>
+                <span className="details-label" style={{ fontSize: '0.95rem' }}>ID</span>
+                <span className="details-value" style={{ wordBreak: 'break-all', fontSize: '0.9rem', color: 'var(--primary)', fontFamily: 'monospace' }}>#{currentProduct.id || currentProduct.productId}</span>
               </div>
-              <div className="details-row">
-                <span className="details-label">İsim</span>
-                <span className="details-value">{currentProduct.name}</span>
+              <div className="details-row" style={{ padding: '14px 0' }}>
+                <span className="details-label" style={{ fontSize: '0.95rem' }}>İsim</span>
+                <span className="details-value" style={{ fontSize: '1.15rem' }}>{currentProduct.name}</span>
               </div>
-              <div className="details-row">
-                <span className="details-label">Fiyat</span>
-                <span className="details-value">${currentProduct.price}</span>
+              {currentProduct.categoryName && (
+                <div className="details-row" style={{ padding: '14px 0' }}>
+                  <span className="details-label" style={{ fontSize: '0.95rem' }}>Kategori</span>
+                  <span className="details-value" style={{ fontSize: '1.05rem' }}>{currentProduct.categoryName}</span>
+                </div>
+              )}
+              <div className="details-row" style={{ padding: '14px 0' }}>
+                <span className="details-label" style={{ fontSize: '0.95rem' }}>Fiyat</span>
+                <span className="details-value" style={{ fontSize: '1.25rem', color: 'var(--success)' }}>${currentProduct.price}</span>
               </div>
-              <div className="details-row">
-                <span className="details-label">Stok</span>
-                <span className="details-value">{currentProduct.stock}</span>
+              <div className="details-row" style={{ padding: '14px 0' }}>
+                <span className="details-label" style={{ fontSize: '0.95rem' }}>Stok</span>
+                <span className="details-value" style={{ fontSize: '1.1rem' }}>{currentProduct.stock}</span>
               </div>
-              <div className="details-row">
-                <span className="details-label">Durum</span>
-                <span className="details-value">{currentProduct.status || (currentProduct.stock > 0 ? 'In Stock' : 'Out of Stock')}</span>
+              <div className="details-row" style={{ padding: '14px 0' }}>
+                <span className="details-label" style={{ fontSize: '0.95rem' }}>Durum</span>
+                <span className="details-value">
+                  <span className={`badge ${currentProduct.stock > 0 ? 'in-stock' : 'out-of-stock'}`} style={{ fontSize: '0.9rem', padding: '6px 16px' }}>
+                    {currentProduct.status || (currentProduct.stock > 0 ? 'In Stock' : 'Out of Stock')}
+                  </span>
+                </span>
               </div>
+              {currentProduct.images && currentProduct.images.length > 0 && (
+                <div className="details-row" style={{ padding: '14px 0' }}>
+                  <span className="details-label" style={{ fontSize: '0.95rem' }}>Görsel Sayısı</span>
+                  <span className="details-value" style={{ fontSize: '1.05rem' }}>{currentProduct.images.length} Adet</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -507,29 +750,38 @@ const ProductsPage = () => {
   const renderDelete = () => {
     if (!currentProduct) return null;
     return (
-      <div className="modal-overlay">
-        <div className="modal-content" style={{ maxWidth: '750px', width: '95%' }}>
-          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ margin: 0, color: 'var(--danger)' }}>Ürün Sil</h2>
-            <button className="btn-icon" style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }} onClick={closeModal}>✕</button>
+      <div 
+        className="modal-overlay" 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeModal();
+        }}
+      >
+        <div 
+          className="modal-content" 
+          onClick={(e) => e.stopPropagation()} 
+          style={{ maxWidth: '850px', width: '90%', padding: '36px' }}
+        >
+          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+            <h2 style={{ margin: 0, color: 'var(--danger)', fontSize: '1.5rem' }}>Ürün Sil</h2>
+            <button className="btn-icon" style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', padding: '6px' }} onClick={closeModal} title="Kapat">✕</button>
           </div>
           <div className="modal-split-layout">
-            <div style={{ alignSelf: 'start' }}>
+            <div style={{ alignSelf: 'start', width: '100%' }}>
               {renderProductImage()}
             </div>
-            <div className="details-card" style={{ borderColor: 'var(--danger)' }}>
-              <p style={{ color: 'var(--danger)', fontWeight: 600, marginBottom: '16px' }}>
-                Aşağıdaki ürünü kalıcı olarak silmek üzeresiniz!
+            <div className="details-card" style={{ borderColor: 'var(--danger)', padding: '28px' }}>
+              <p style={{ color: 'var(--danger)', fontWeight: 600, marginBottom: '20px', fontSize: '1.05rem' }}>
+                ⚠️ Aşağıdaki ürünü kalıcı olarak silmek üzeresiniz!
               </p>
-              <div className="details-row">
+              <div className="details-row" style={{ padding: '14px 0' }}>
                 <span className="details-label">İsim</span>
-                <span className="details-value">{currentProduct.name}</span>
+                <span className="details-value" style={{ fontSize: '1.15rem' }}>{currentProduct.name}</span>
               </div>
-              <div className="details-row">
+              <div className="details-row" style={{ padding: '14px 0' }}>
                 <span className="details-label">Fiyat</span>
-                <span className="details-value">${currentProduct.price}</span>
+                <span className="details-value" style={{ fontSize: '1.2rem', color: 'var(--danger)' }}>${currentProduct.price}</span>
               </div>
-              <button className="btn-primary" style={{ background: 'var(--danger)', marginTop: '24px', width: '100%', justifyContent: 'center' }} onClick={handleDeleteSubmit} disabled={loading}>
+              <button className="btn-primary" style={{ background: 'var(--danger)', marginTop: '28px', width: '100%', justifyContent: 'center', padding: '14px', fontSize: '1rem' }} onClick={handleDeleteSubmit} disabled={loading}>
                 {loading ? 'Siliniyor...' : 'Evet, Kalıcı Olarak Sil'}
               </button>
             </div>
@@ -542,21 +794,37 @@ const ProductsPage = () => {
   const renderUpdate = () => {
     if (!currentProduct) return null;
     return (
-      <div className="modal-overlay">
-        <div className="modal-content" style={{ maxWidth: '850px', width: '95%', maxHeight: '90vh', overflowY: 'auto' }}>
-          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ margin: 0 }}>Ürün Güncelle</h2>
-            <button className="btn-icon" style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }} onClick={closeModal}>✕</button>
+      <div 
+        className="modal-overlay" 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeModal();
+        }}
+      >
+        <div 
+          className="modal-content" 
+          onClick={(e) => e.stopPropagation()} 
+          style={{ maxWidth: '1150px', width: '92%', maxHeight: '92vh', overflowY: 'auto', padding: '36px' }}
+        >
+          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700 }}>Ürün Güncelle</h2>
+            <button className="btn-icon" style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', padding: '6px' }} onClick={closeModal} title="Kapat">✕</button>
           </div>
 
           <div className="modal-split-layout">
-            <div style={{ alignSelf: 'start' }}>
-              {renderProductImage()}
+            <div style={{ alignSelf: 'start', width: '100%' }}>
+              {renderProductGallery()}
               <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
                 <ProductImageUploader
                   productId={searchId}
                   initialImages={currentProduct.images || []}
-                  onImagesChanged={() => { }}
+                  onImagesChanged={async () => {
+                    try {
+                      const refreshed = await productsApi.getProductById(searchId);
+                      if (refreshed) setCurrentProduct(refreshed);
+                    } catch (e) {
+                      console.error('Görseller yenilenemedi:', e);
+                    }
+                  }}
                 />
               </div>
             </div>
